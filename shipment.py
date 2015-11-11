@@ -124,8 +124,8 @@ class ShipmentIn:
         line.type = 'line'
         line.product = product
         line.unit = product.purchase_uom
-        line.quantity = quantity
         line.unit_price = product.cost_price  # TODO
+
         set_depends(
             [f for f in PurchaseLine.product.on_change
                 if not f.startswith('_parent_purchase')],
@@ -135,16 +135,22 @@ class ShipmentIn:
                 if f.startswith('_parent_purchase')],
             line.purchase, Purchase)
         changes = line.on_change_product()
+
         if changes.get('description'):
             line.description = changes['description']
         else:
             line.description = product.rec_name
+
         line.taxes = []
         for tax_id in changes['taxes']:
             line.taxes.append(Tax(tax_id))
+
         if moves[0].unit_price:
             line.unit_price = moves[0].unit_price
         else:
             line.unit_price = changes['unit_price']
+
         line.moves = moves
+
+        line.quantity = quantity
         return line
