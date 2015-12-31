@@ -4,7 +4,7 @@ from trytond.model import fields
 from trytond.pool import Pool, PoolMeta
 from trytond.pyson import Bool, Eval
 
-__all__ = ['ShipmentIn']
+__all__ = ['ShipmentIn', 'ShipmentInReturn', 'ReturnShipmentIn', 'Purchase']
 __metaclass__ = PoolMeta
 
 
@@ -24,7 +24,7 @@ def set_depends(field_names, instance, Model):
 
 class CreatePurchaseMixin:
 
-    def create_purchase(self):
+    def create_purchase(self, warehouse=None):
         pool = Pool()
         Uom = pool.get('product.uom')
 
@@ -55,7 +55,7 @@ class CreatePurchaseMixin:
 
         sign = -1.0 if self.__name__ == 'stock.shipment.in.return' else 1.0
 
-        purchase = self.get_purchase()
+        purchase = self.get_purchase(warehouse)
         for product, moves in product2moves.iteritems():
             purchase_line = self.get_purchase_line(purchase, product,
                 product2quantity[product] * sign, moves)
@@ -64,7 +64,7 @@ class CreatePurchaseMixin:
         purchase.save()
         return purchase
 
-    def get_purchase(self):
+    def get_purchase(self, warehouse):
         pool = Pool()
         Address = pool.get('party.address')
         Currency = pool.get('currency.currency')
@@ -88,7 +88,7 @@ class CreatePurchaseMixin:
             purchase.invoice_address = Address(changes['invoice_address'])
         if changes.get('payment_term'):
             purchase.payment_term = PaymentTerm(changes['payment_term'])
-        purchase.warehouse = self.warehouse
+        purchase.warehouse = warehouse
 
         return purchase
 
@@ -137,13 +137,6 @@ class CreatePurchaseMixin:
 
 class ShipmentIn(CreatePurchaseMixin):
     __name__ = 'stock.shipment.in'
-    supplier = fields.Many2One('party.party', 'Supplier',
-        states={
-            'readonly': (
-                ((Eval('state') != 'draft') | Bool(Eval('moves', [0])))
-                & Bool(Eval('supplier'))),
-            }, required=True,
-        depends=['state', 'supplier'])
 
     @classmethod
     def __setup__(cls):
@@ -151,7 +144,7 @@ class ShipmentIn(CreatePurchaseMixin):
         cls._error_messages.update({
                 'create_purchase_from_move': (
                     'The Supplier Shipment "%(shipment)s" has movements '
-                    'without origin. It will create a purchase the next '
+                    'without origin. It will create a purchase for the next '
                     'products: %(products_wo_origin)s.'),
                 })
 
@@ -162,7 +155,7 @@ class ShipmentIn(CreatePurchaseMixin):
 
         purchases = []
         for shipment in shipments:
-            purchase = shipment.create_purchase()
+            purchase = shipment.create_purchase(warehouse=shipment.warehouse)
             if purchase:
                 purchases.append(purchase)
         if purchases:
@@ -174,9 +167,26 @@ class ShipmentIn(CreatePurchaseMixin):
 
 class ShipmentInReturn(CreatePurchaseMixin):
     __name__ = 'stock.shipment.in.return'
+    supplier = fields.Many2One('party.party', 'Supplier',
+        states={
+            'readonly': (
+                ((Eval('state') != 'draft') | Bool(Eval('moves', [0])))
+                & Bool(Eval('supplier'))),
+            }, required=True,
+        depends=['state', 'supplier'])
 
     @classmethod
-    def done(cls, shipments):
+    def __setup__(cls):
+        super(ShipmentInReturn, cls).__setup__()
+        cls._error_messages.update({
+                'create_purchase_from_move': (
+                    'The Supplier Shipment Return "%(shipment)s" has '
+                    'movements without origin. It will create a negative '
+                    'purchase for the next products: %(products_wo_origin)s.'),
+                })
+
+    @classmethod
+    def assign_try(cls, shipments):
         pool = Pool()
         Purchase = pool.get('purchase.purchase')
 
@@ -189,4 +199,22 @@ class ShipmentInReturn(CreatePurchaseMixin):
             Purchase.quote(purchases)
             Purchase.confirm(purchases)
             Purchase.process(purchases)
-        super(ShipmentInReturn, cls).done(shipments)
+        super(ShipmentInReturn, cls).assign_try(shipments)
+
+
+class ReturnShipmentIn:
+    __name__ = 'stock.shipment.in.return_shipment'
+
+    def _get_return_shipment(self):
+        shipment = super(ReturnShipmentIn, self)._get_return_shipment()
+        shipment.supplier = self.party
+        return shipment
+
+
+class Purchase:
+    __name__ = 'purchase.purchase'
+
+    def _get_return_shipment(self):
+        shipment = super(Purchase, self)._get_return_shipment()
+        shipment.supplier = self.party
+        return shipment
