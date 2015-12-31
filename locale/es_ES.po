@@ -1,0 +1,25 @@
+#
+msgid ""
+msgstr "Content-Type: text/plain; charset=utf-8\n"
+
+msgctxt "error:stock.shipment.in.return:"
+msgid ""
+"The Supplier Shipment Return \"%(shipment)s\" has movements without origin. "
+"It will create a negative purchase for the next products: "
+"%(products_wo_origin)s."
+msgstr ""
+"El albarán de devolución a proveedor \"%(shipment)s\" tiene movimientos sin "
+"origen. Se creará una compra negativa con los siguientes productos: "
+"%(products_wo_origin)s."
+
+msgctxt "error:stock.shipment.in:"
+msgid ""
+"The Supplier Shipment \"%(shipment)s\" has movements without origin. It will"
+" create a purchase for the next products: %(products_wo_origin)s."
+msgstr ""
+"El albarán de proveedor \"%(shipment)s\" tiene movimientos sin origen. Se "
+"creará una compra con los siguientes productos: %(products_wo_origin)s."
+
+msgctxt "field:stock.shipment.in.return,supplier:"
+msgid "Supplier"
+msgstr "Proveedor"
