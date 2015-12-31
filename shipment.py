@@ -2,6 +2,7 @@
 # copyright notices and license terms.
 from trytond.model import fields
 from trytond.pool import Pool, PoolMeta
+from trytond.pyson import Bool, Eval
 
 __all__ = ['ShipmentIn']
 __metaclass__ = PoolMeta
@@ -21,34 +22,7 @@ def set_depends(field_names, instance, Model):
             setattr(instance, fname, default_value)
 
 
-class ShipmentIn:
-    __name__ = 'stock.shipment.in'
-
-    @classmethod
-    def __setup__(cls):
-        super(ShipmentIn, cls).__setup__()
-        cls._error_messages.update({
-                'create_purchase_from_move': (
-                    'The Supplier Shipment "%(shipment)s" has movements '
-                    'without origin. It will create a purchase the next '
-                    'products: %(products_wo_origin)s.'),
-                })
-
-    @classmethod
-    def receive(cls, shipments):
-        pool = Pool()
-        Purchase = pool.get('purchase.purchase')
-
-        purchases = []
-        for shipment in shipments:
-            purchase = shipment.create_purchase()
-            if purchase:
-                purchases.append(purchase)
-        if purchases:
-            Purchase.quote(purchases)
-            Purchase.confirm(purchases)
-            Purchase.process(purchases)
-        super(ShipmentIn, cls).receive(shipments)
+class CreatePurchaseMixin:
 
     def create_purchase(self):
         pool = Pool()
@@ -56,7 +30,10 @@ class ShipmentIn:
 
         product2moves = {}
         product2quantity = {}
-        for move in self.incoming_moves:
+        moves_fname = ('incoming_moves' if self.__name__ == 'stock.shipment.in'
+            else 'moves')
+        for move in getattr(self, moves_fname, []):
+            # TODO
             if move.origin:  # already in purchase
                 continue
 
@@ -76,10 +53,12 @@ class ShipmentIn:
                         for p in product2moves.keys()]),
                 })
 
+        sign = -1.0 if self.__name__ == 'stock.shipment.in.return' else 1.0
+
         purchase = self.get_purchase()
         for product, moves in product2moves.iteritems():
             purchase_line = self.get_purchase_line(purchase, product,
-                product2quantity[product], moves)
+                product2quantity[product] * sign, moves)
             if purchase_line:
                 purchase.lines.append(purchase_line)
         purchase.save()
@@ -154,3 +133,60 @@ class ShipmentIn:
 
         line.quantity = quantity
         return line
+
+
+class ShipmentIn(CreatePurchaseMixin):
+    __name__ = 'stock.shipment.in'
+    supplier = fields.Many2One('party.party', 'Supplier',
+        states={
+            'readonly': (
+                ((Eval('state') != 'draft') | Bool(Eval('moves', [0])))
+                & Bool(Eval('supplier'))),
+            }, required=True,
+        depends=['state', 'supplier'])
+
+    @classmethod
+    def __setup__(cls):
+        super(ShipmentIn, cls).__setup__()
+        cls._error_messages.update({
+                'create_purchase_from_move': (
+                    'The Supplier Shipment "%(shipment)s" has movements '
+                    'without origin. It will create a purchase the next '
+                    'products: %(products_wo_origin)s.'),
+                })
+
+    @classmethod
+    def receive(cls, shipments):
+        pool = Pool()
+        Purchase = pool.get('purchase.purchase')
+
+        purchases = []
+        for shipment in shipments:
+            purchase = shipment.create_purchase()
+            if purchase:
+                purchases.append(purchase)
+        if purchases:
+            Purchase.quote(purchases)
+            Purchase.confirm(purchases)
+            Purchase.process(purchases)
+        super(ShipmentIn, cls).receive(shipments)
+
+
+class ShipmentInReturn(CreatePurchaseMixin):
+    __name__ = 'stock.shipment.in.return'
+
+    @classmethod
+    def done(cls, shipments):
+        pool = Pool()
+        Purchase = pool.get('purchase.purchase')
+
+        purchases = []
+        for shipment in shipments:
+            purchase = shipment.create_purchase()
+            if purchase:
+                purchases.append(purchase)
+        if purchases:
+            Purchase.quote(purchases)
+            Purchase.confirm(purchases)
+            Purchase.process(purchases)
+        super(ShipmentInReturn, cls).done(shipments)
