@@ -7,4 +7,9 @@ from .shipment import *
 def register():
     Pool.register(
         ShipmentIn,
+        ShipmentInReturn,
+        ReturnShipmentIn,
         module='purchase_from_shipment', type_='model')
+    Pool.register(
+        Purchase,
+        module='purchase_from_shipment', type_='wizard')
