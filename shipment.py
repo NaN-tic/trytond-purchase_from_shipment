@@ -208,7 +208,7 @@ class ReturnShipmentIn:
     def _get_return_shipment(self, shipment_in):
         shipment = super(ReturnShipmentIn, self)._get_return_shipment(
             shipment_in)
-        shipment.supplier = shipment_in.party
+        shipment.supplier = shipment_in.supplier
         return shipment
 
 
