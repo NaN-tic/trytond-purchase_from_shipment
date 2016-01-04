@@ -199,7 +199,7 @@ class ShipmentInReturn(CreatePurchaseMixin):
             Purchase.quote(purchases)
             Purchase.confirm(purchases)
             Purchase.process(purchases)
-        super(ShipmentInReturn, cls).assign_try(shipments)
+        return super(ShipmentInReturn, cls).assign_try(shipments)
 
 
 class ReturnShipmentIn:
