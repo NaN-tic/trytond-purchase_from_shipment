@@ -205,9 +205,10 @@ class ShipmentInReturn(CreatePurchaseMixin):
 class ReturnShipmentIn:
     __name__ = 'stock.shipment.in.return_shipment'
 
-    def _get_return_shipment(self):
-        shipment = super(ReturnShipmentIn, self)._get_return_shipment()
-        shipment.supplier = self.party
+    def _get_return_shipment(self, shipment_in):
+        shipment = super(ReturnShipmentIn, self)._get_return_shipment(
+            shipment_in)
+        shipment.supplier = shipment_in.party
         return shipment
 
 

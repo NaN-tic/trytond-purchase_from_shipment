@@ -6,10 +6,10 @@ from .shipment import *
 
 def register():
     Pool.register(
+        Purchase,
         ShipmentIn,
         ShipmentInReturn,
-        ReturnShipmentIn,
         module='purchase_from_shipment', type_='model')
     Pool.register(
-        Purchase,
+        ReturnShipmentIn,
         module='purchase_from_shipment', type_='wizard')
