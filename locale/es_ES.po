@@ -23,3 +23,11 @@ msgstr ""
 msgctxt "field:stock.shipment.in.return,supplier:"
 msgid "Supplier"
 msgstr "Proveedor"
+
+msgctxt "model:ir.action,name:act_shipment_in_purchases"
+msgid "Purchases"
+msgstr "Compras"
+
+msgctxt "model:ir.action,name:act_shipment_in_return_purchases"
+msgid "Purchases"
+msgstr "Compras"
