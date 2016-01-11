@@ -233,6 +233,7 @@ Return 2 products::
     >>> shipment_in_return.save()
     >>> shipment_in_return.click('wait')
     >>> shipment_in_return.click('assign_try')
+    True
     >>> shipment_in_return.click('done')
     >>> shipment_in_return.reload()
     >>> shipment_in_return.state
@@ -257,4 +258,52 @@ Check purchase is created and is processing::
     >>> purchases[0].state
     u'processing'
     >>> purchases[0].shipment_state
+    u'received'
+
+Install stock_shipment_return (extra depends)::
+
+    >>> Module = Model.get('ir.module.module')
+    >>> shipment_return_module, = Module.find([
+    ...         ('name', '=', 'stock_shipment_return'),
+    ...         ])
+    >>> Module.install([shipment_return_module.id], config.context)
+    >>> Wizard('ir.module.module.install_upgrade').execute('upgrade')
+
+Return some products using the wizard::
+
+    >>> return_shipment = Wizard('stock.shipment.in.return_shipment',
+    ...     [shipment_in])
+    >>> return_shipment.execute('return_')
+    >>> returned_shipment, = ShipmentInReturn.find([
+    ...     ('state', '=', 'draft'),
+    ...     ])
+    >>> sorted([m.quantity for m in returned_shipment.moves])
+    [2.0, 3.0]
+    >>> returned_shipment.moves.remove(returned_shipment.moves[-1])
+    >>> returned_shipment.moves[0].quantity = 1
+    >>> returned_shipment.save()
+    >>> sorted([x.quantity for x in returned_shipment.moves])
+    [1.0]
+
+Process returning shipment::
+
+    >>> returned_shipment.click('wait')
+    >>> returned_shipment.click('assign_try')
+    True
+    >>> returned_shipment.click('done')
+    >>> returned_shipment.reload()
+    >>> returned_shipment.state
+    u'done'
+
+Check purchase is created and is processing::
+
+    >>> all(isinstance(m.origin, PurchaseLine)
+    ...     for m in returned_shipment.moves)
+    True
+    >>> purchase = returned_shipment.moves[0].origin.purchase
+    >>> purchase.shipment_returns[0] == returned_shipment
+    True
+    >>> purchase.state
+    u'processing'
+    >>> purchase.shipment_state
     u'received'
