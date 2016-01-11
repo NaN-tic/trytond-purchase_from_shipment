@@ -33,10 +33,8 @@ class CreatePurchaseMixin:
         moves_fname = ('incoming_moves' if self.__name__ == 'stock.shipment.in'
             else 'moves')
         for move in getattr(self, moves_fname, []):
-            # TODO
-            if move.origin:  # already in purchase
+            if move.origin:
                 continue
-
             assert move.product.purchasable
             product2moves.setdefault(move.product, []).append(move)
             product2quantity.setdefault(move.product, 0.0)
