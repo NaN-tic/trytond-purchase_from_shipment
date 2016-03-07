@@ -12,7 +12,7 @@ def set_depends(field_names, instance, Model):
     pool = Pool()
 
     for fname in field_names:
-        if not hasattr(instance, fname):
+        if not hasattr(instance, fname) and hasattr(Model, fname):
             default_method = getattr(Model, 'default_%s' % fname, None)
             default_value = default_method() if default_method else None
             field = getattr(Model, fname)
