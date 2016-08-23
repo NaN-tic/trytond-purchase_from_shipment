@@ -18,7 +18,9 @@
         <record model="ir.action.act_window" id="act_shipment_in_purchases">
             <field name="name">Purchases</field>
             <field name="res_model">purchase.purchase</field>
-            <field name="domain">[('lines.moves.shipment.id', 'in', Eval('active_ids'), 'stock.shipment.in')]</field>
+            <field name="domain"
+                eval="[('lines.moves.shipment.id', 'in', Eval('active_ids'), 'stock.shipment.in')]"
+                pyson="1"/>
         </record>
         <record model="ir.action.keyword"
                 id="act_open_shipment_in_purchases_keyword1">
@@ -31,7 +33,9 @@
             id="act_shipment_in_return_purchases">
             <field name="name">Purchases</field>
             <field name="res_model">purchase.purchase</field>
-            <field name="domain">[('lines.moves.shipment.id', 'in', Eval('active_ids'), 'stock.shipment.in.return')]</field>
+            <field name="domain"
+                eval="[('lines.moves.shipment.id', 'in', Eval('active_ids'), 'stock.shipment.in.return')]"
+                pyson="1"/>
         </record>
         <record model="ir.action.keyword"
                 id="act_open_shipment_in_return_purchases_keyword1">
