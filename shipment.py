@@ -54,11 +54,13 @@ class CreatePurchaseMixin:
         sign = -1.0 if self.__name__ == 'stock.shipment.in.return' else 1.0
 
         purchase = self.get_purchase(warehouse)
+        purchase_lines = []
         for product, moves in product2moves.iteritems():
             purchase_line = self.get_purchase_line(purchase, product,
                 product2quantity[product] * sign, moves)
             if purchase_line:
-                purchase.lines.append(purchase_line)
+                purchase_lines.append(purchase_line)
+        purchase.lines = purchase_lines
         purchase.save()
         return purchase
 
@@ -79,13 +81,7 @@ class CreatePurchaseMixin:
         purchase.payment_term = None
         purchase.lines = []
         set_depends(Purchase.party.on_change, purchase, Purchase)
-        changes = purchase.on_change_party()
-        if changes.get('currency'):
-            purchase.currency = Currency(changes['currency'])
-        if changes.get('invoice_address'):
-            purchase.invoice_address = Address(changes['invoice_address'])
-        if changes.get('payment_term'):
-            purchase.payment_term = PaymentTerm(changes['payment_term'])
+        purchase.on_change_party()
         purchase.warehouse = warehouse
 
         return purchase
@@ -111,24 +107,13 @@ class CreatePurchaseMixin:
             [f.split('.')[1] for f in PurchaseLine.product.on_change
                 if f.startswith('_parent_purchase')],
             line.purchase, Purchase)
-        changes = line.on_change_product()
 
-        if changes.get('description'):
-            line.description = changes['description']
-        else:
+        line.on_change_product()
+        if not line.description:
             line.description = product.rec_name
-
-        line.taxes = []
-        for tax_id in changes['taxes']:
-            line.taxes.append(Tax(tax_id))
-
         if moves[0].unit_price:
             line.unit_price = moves[0].unit_price
-        else:
-            line.unit_price = changes['unit_price']
-
         line.moves = moves
-
         line.quantity = quantity
         return line
 
