@@ -2,7 +2,7 @@
 <!-- The COPYRIGHT file at the top level of this repository contains the full
      copyright notices and license terms. -->
 <data>
-    <xpath expr="/form/field[@name='code']" position="after">
+    <xpath expr="/form/field[@name='number']" position="after">
         <label name="supplier"/>
         <field name="supplier"/>
         <newline/>
