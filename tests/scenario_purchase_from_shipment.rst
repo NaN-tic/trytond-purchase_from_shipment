@@ -9,27 +9,20 @@ Imports::
     >>> from decimal import Decimal
     >>> from operator import attrgetter
     >>> from proteus import config, Model, Wizard
+    >>> from trytond.tests.tools import activate_modules
     >>> from trytond.modules.company.tests.tools import create_company, \
     ...     get_company
     >>> from trytond.modules.account.tests.tools import create_fiscalyear, \
-    ...     create_chart, get_accounts, create_tax, set_tax_code
+    ...     create_chart, get_accounts, create_tax
     >>> from trytond.modules.account_invoice.tests.tools import \
     ...     set_fiscalyear_invoice_sequences, create_payment_term
     >>> today = datetime.date.today()
 
-Create database::
-
-    >>> config = config.set_trytond()
-    >>> config.pool.test = True
 
 Install purchase_from_shipment::
 
-    >>> Module = Model.get('ir.module')
-    >>> purchase_module, = Module.find([
-    ...         ('name', '=', 'purchase_from_shipment'),
-    ...         ])
-    >>> Module.install([purchase_module.id], config.context)
-    >>> Wizard('ir.module.install_upgrade').execute('upgrade')
+    >>> config = activate_modules(['purchase_from_shipment', \
+    ...     'stock_shipment_return'])
 
 Create company::
 
@@ -199,14 +192,6 @@ Check purchase is created and is processing::
     >>> purchases[0].shipment_state
     u'received'
 
-Install stock_shipment_return (extra depends)::
-
-    >>> Module = Model.get('ir.module')
-    >>> shipment_return_module, = Module.find([
-    ...         ('name', '=', 'stock_shipment_return'),
-    ...         ])
-    >>> Module.install([shipment_return_module.id], config.context)
-    >>> Wizard('ir.module.install_upgrade').execute('upgrade')
 
 Return some products using the wizard::
 

@@ -5,7 +5,6 @@ from trytond.pool import Pool, PoolMeta
 from trytond.pyson import Bool, Eval
 
 __all__ = ['ShipmentIn', 'ShipmentInReturn', 'ReturnShipmentIn', 'Purchase']
-__metaclass__ = PoolMeta
 
 
 def set_depends(field_names, instance, Model):
@@ -22,7 +21,7 @@ def set_depends(field_names, instance, Model):
             setattr(instance, fname, default_value)
 
 
-class CreatePurchaseMixin:
+class CreatePurchaseMixin(object):
 
     def create_purchase(self, warehouse=None):
         pool = Pool()
@@ -54,25 +53,26 @@ class CreatePurchaseMixin:
         sign = -1.0 if self.__name__ == 'stock.shipment.in.return' else 1.0
 
         purchase = self.get_purchase(warehouse)
+        purchase.save()
         purchase_lines = []
         for product, moves in product2moves.iteritems():
             purchase_line = self.get_purchase_line(purchase, product,
                 product2quantity[product] * sign, moves)
+            purchase_line.save()
+            for m in moves:
+                m.origin = purchase_line
+                m.save()
             if purchase_line:
                 purchase_lines.append(purchase_line)
-        purchase.lines = purchase_lines
-        purchase.save()
+        #purchase.lines = purchase_lines
+#        purchase.save()
         return purchase
 
     def get_purchase(self, warehouse):
         pool = Pool()
-        Address = pool.get('party.address')
-        Currency = pool.get('currency.currency')
         Date = pool.get('ir.date')
-        PaymentTerm = pool.get('account.invoice.payment_term')
         Purchase = pool.get('purchase.purchase')
 
-        # TODO: search existing purchase?
         purchase = Purchase()
         purchase.invoice_method = 'shipment'
         purchase.company = self.company
@@ -90,14 +90,14 @@ class CreatePurchaseMixin:
         pool = Pool()
         Purchase = pool.get('purchase.purchase')
         PurchaseLine = pool.get('purchase.line')
-        Tax = pool.get('account.tax')
 
         line = PurchaseLine()
         line.purchase = purchase
         line.type = 'line'
         line.product = product
         line.unit = product.purchase_uom
-        line.unit_price = product.cost_price  # TODO
+        line.unit_price = product.cost_price
+        line.description = ''
 
         set_depends(
             [f for f in PurchaseLine.product.on_change
@@ -120,6 +120,7 @@ class CreatePurchaseMixin:
 
 class ShipmentIn(CreatePurchaseMixin):
     __name__ = 'stock.shipment.in'
+    __metaclass__ = PoolMeta
 
     @classmethod
     def __setup__(cls):
@@ -150,6 +151,7 @@ class ShipmentIn(CreatePurchaseMixin):
 
 class ShipmentInReturn(CreatePurchaseMixin):
     __name__ = 'stock.shipment.in.return'
+    __metaclass__ = PoolMeta
     supplier = fields.Many2One('party.party', 'Supplier',
         states={
             'readonly': (
@@ -187,6 +189,7 @@ class ShipmentInReturn(CreatePurchaseMixin):
 
 class ReturnShipmentIn:
     __name__ = 'stock.shipment.in.return_shipment'
+    __metaclass__ = PoolMeta
 
     def _get_return_shipment(self, shipment_in):
         shipment = super(ReturnShipmentIn, self)._get_return_shipment(
@@ -197,6 +200,7 @@ class ReturnShipmentIn:
 
 class Purchase:
     __name__ = 'purchase.purchase'
+    __metaclass__ = PoolMeta
 
     def _get_return_shipment(self):
         shipment = super(Purchase, self)._get_return_shipment()
