@@ -70,6 +70,24 @@ Get stock locations::
     >>> input_loc, = Location.find([('code', '=', 'IN')])
     >>> storage_loc, = Location.find([('code', '=', 'STO')])
 
+Create tax::
+
+    >>> tax = create_tax(Decimal('.10'))
+    >>> tax.save()
+
+Create account categories::
+
+    >>> ProductCategory = Model.get('product.category')
+    >>> account_category = ProductCategory(name="Account Category")
+    >>> account_category.accounting = True
+    >>> account_category.account_expense = expense
+    >>> account_category.account_revenue = revenue
+    >>> account_category.save()
+
+    >>> account_category_tax, = account_category.duplicate()
+    >>> account_category_tax.supplier_taxes.append(tax)
+    >>> account_category_tax.save()
+
 Create product::
 
     >>> ProductUom = Model.get('product.uom')
@@ -84,12 +102,11 @@ Create product::
     >>> template.purchasable = True
     >>> template.salable = True
     >>> template.list_price = Decimal('10')
-    >>> template.cost_price = Decimal('5')
     >>> template.cost_price_method = 'fixed'
-    >>> template.account_expense = expense
-    >>> template.account_revenue = revenue
+    >>> template.account_category = account_category_tax
     >>> template.save()
     >>> product.template = template
+    >>> product.cost_price = Decimal('5')
     >>> product.save()
 
 Create payment term::
@@ -120,12 +137,12 @@ Receive 5 products::
         ...
     UserWarning: ...
     >>> Model.get('res.user.warning')(user=config.user,
-    ...     name='create_purchase_from_move', always=True).save()
+    ...     name='create_purchase_from_move_%s'%shipment_in.id, always=True).save()
     >>> shipment_in.click('receive')
     >>> shipment_in.click('done')
     >>> shipment_in.reload()
     >>> shipment_in.state
-    u'done'
+    'done'
 
 Check purchase is created and is processing::
 
@@ -144,9 +161,9 @@ Check purchase is created and is processing::
     >>> purchases[0].shipments[0] == shipment_in
     True
     >>> purchases[0].state
-    u'processing'
+    'processing'
     >>> purchases[0].shipment_state
-    u'received'
+    'received'
 
 Return 2 products::
 
@@ -164,12 +181,15 @@ Return 2 products::
     >>> move.to_location = supplier_loc
     >>> shipment_in_return.save()
     >>> shipment_in_return.click('wait')
+    >>> Model.get('res.user.warning')(user=config.user,
+    ...     name='create_purchase_from_move_%s'%shipment_in_return.id,
+    ...     always=True).save()
     >>> shipment_in_return.click('assign_try')
     True
     >>> shipment_in_return.click('done')
     >>> shipment_in_return.reload()
     >>> shipment_in_return.state
-    u'done'
+    'done'
 
 Check purchase is created and is processing::
 
@@ -188,9 +208,9 @@ Check purchase is created and is processing::
     >>> purchases[0].shipment_returns[0] == shipment_in_return
     True
     >>> purchases[0].state
-    u'processing'
+    'processing'
     >>> purchases[0].shipment_state
-    u'received'
+    'received'
 
 
 Return some products using the wizard::
@@ -212,12 +232,15 @@ Return some products using the wizard::
 Process returning shipment::
 
     >>> returned_shipment.click('wait')
+    >>> Model.get('res.user.warning')(user=config.user,
+    ...     name='create_purchase_from_move_%s'%returned_shipment.id,
+    ...     always=True).save()
     >>> returned_shipment.click('assign_try')
     True
     >>> returned_shipment.click('done')
     >>> returned_shipment.reload()
     >>> returned_shipment.state
-    u'done'
+    'done'
 
 Check purchase is created and is processing::
 
@@ -228,6 +251,6 @@ Check purchase is created and is processing::
     >>> purchase.shipment_returns[0] == returned_shipment
     True
     >>> purchase.state
-    u'processing'
+    'processing'
     >>> purchase.shipment_state
-    u'received'
+    'received'
