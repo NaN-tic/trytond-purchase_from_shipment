@@ -4,7 +4,7 @@ from trytond.model import fields
 from trytond.pool import Pool, PoolMeta
 from trytond.pyson import Bool, Eval
 from trytond.i18n import gettext
-from trytond.exceptions import UserError
+from trytond.exceptions import UserError, UserWarning
 
 
 __all__ = ['ShipmentIn', 'ShipmentInReturn', 'ReturnShipmentIn', 'Purchase']
@@ -29,6 +29,7 @@ class CreatePurchaseMixin(object):
     def create_purchase(self, warehouse=None):
         pool = Pool()
         Uom = pool.get('product.uom')
+        Warning = pool.get('res.user.warning')
 
         product2moves = {}
         product2quantity = {}
@@ -46,8 +47,10 @@ class CreatePurchaseMixin(object):
         if not product2quantity:
             return
 
-        raise UserWarning('create_purchase_from_move',
-            gettext('purchase_from_shipment.create_purchase_from_move',
+        warning_key = 'create_purchase_from_move_%s'%self.id
+        if Warning.check(warning_key):
+            raise UserWarning(warning_key,gettext(
+                'purchase_from_shipment.create_purchase_from_move',
                 shipment=self.rec_name,
                 products_wo_origin=', '.join([p.rec_name
                         for p in product2moves.keys()]),
@@ -58,7 +61,7 @@ class CreatePurchaseMixin(object):
         purchase = self.get_purchase(warehouse)
         purchase.save()
         purchase_lines = []
-        for product, moves in product2moves.iteritems():
+        for product, moves in product2moves.items():
             purchase_line = self.get_purchase_line(purchase, product,
                 product2quantity[product] * sign, moves)
             purchase_line.save()
