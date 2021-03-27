@@ -4,11 +4,7 @@ from trytond.model import fields
 from trytond.pool import Pool, PoolMeta
 from trytond.pyson import Bool, Eval
 from trytond.i18n import gettext
-from trytond.exceptions import UserError, UserWarning
-
-
-__all__ = ['ShipmentIn', 'ShipmentInReturn', 'ReturnShipmentIn', 'Purchase']
-
+from trytond.exceptions import UserWarning
 
 def set_depends(field_names, instance, Model):
     pool = Pool()
