@@ -1,6 +1,6 @@
 # The COPYRIGHT file at the top level of this repository contains the full
 # copyright notices and license terms.
-from trytond.model import fields
+from trytond.model import fields, dualmethod
 from trytond.pool import Pool, PoolMeta
 from trytond.pyson import Bool, Eval
 from trytond.i18n import gettext
@@ -148,7 +148,7 @@ class ShipmentInReturn(CreatePurchaseMixin, metaclass=PoolMeta):
             }, required=True,
         depends=['state', 'supplier'])
 
-    @classmethod
+    @dualmethod
     def assign_try(cls, shipments):
         pool = Pool()
         Purchase = pool.get('purchase.purchase')
