@@ -21,6 +21,7 @@ def set_depends(field_names, instance, Model):
 
 
 class CreatePurchaseMixin(object):
+    __slots__ = ()
 
     def create_purchase(self, warehouse=None):
         pool = Pool()
