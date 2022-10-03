@@ -115,7 +115,7 @@ class CreatePurchaseMixin(object):
         if moves[0].unit_price:
             line.unit_price = moves[0].unit_price
         line.moves = moves
-        line.quantity = quantity
+        line.quantity = line.unit.round(quantity)
         return line
 
 
