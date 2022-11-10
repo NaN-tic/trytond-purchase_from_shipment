@@ -124,12 +124,14 @@ Receive 5 products::
     >>> incoming_move.from_location = supplier_loc
     >>> incoming_move.to_location = shipment_in.warehouse_input
     >>> incoming_move.unit_price = Decimal(0)
+    >>> incoming_move.currency = company.currency
     >>> incoming_move = shipment_in.incoming_moves.new()
     >>> incoming_move.product = product
     >>> incoming_move.quantity = 3
     >>> incoming_move.from_location = supplier_loc
     >>> incoming_move.to_location = shipment_in.warehouse_input
     >>> incoming_move.unit_price = Decimal(0)
+    >>> incoming_move.currency = company.currency
     >>> shipment_in.save()
     >>> shipment_in.click('receive') # doctest: +IGNORE_EXCEPTION_DETAIL
     Traceback (most recent call last):
@@ -179,6 +181,7 @@ Return 2 products::
     >>> move.from_location = storage_loc
     >>> move.to_location = supplier_loc
     >>> move.unit_price = Decimal(0)
+    >>> move.currency = company.currency
     >>> shipment_in_return.save()
     >>> shipment_in_return.click('wait')
     >>> Model.get('res.user.warning')(user=config.user,
@@ -211,7 +214,6 @@ Check purchase is created and is processing::
     'processing'
     >>> purchases[0].shipment_state
     'received'
-
 
 Return some products using the wizard::
 
