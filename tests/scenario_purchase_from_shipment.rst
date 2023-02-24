@@ -188,7 +188,6 @@ Return 2 products::
     ...     name='create_purchase_from_move_%s'%shipment_in_return.id,
     ...     always=True).save()
     >>> shipment_in_return.click('assign_try')
-    True
     >>> shipment_in_return.click('done')
     >>> shipment_in_return.reload()
     >>> shipment_in_return.state
@@ -238,7 +237,6 @@ Process returning shipment::
     ...     name='create_purchase_from_move_%s'%returned_shipment.id,
     ...     always=True).save()
     >>> returned_shipment.click('assign_try')
-    True
     >>> returned_shipment.click('done')
     >>> returned_shipment.reload()
     >>> returned_shipment.state
