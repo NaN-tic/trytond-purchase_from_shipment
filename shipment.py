@@ -38,13 +38,13 @@ class CreatePurchaseMixin(object):
             assert move.product.purchasable
             product2moves.setdefault(move.product, []).append(move)
             product2quantity.setdefault(move.product, 0.0)
-            product2quantity[move.product] += Uom.compute_qty(move.uom,
+            product2quantity[move.product] += Uom.compute_qty(move.unit,
                 move.quantity, move.product.purchase_uom)
 
         if not product2quantity:
             return
 
-        warning_key = 'create_purchase_from_move_%s'%self.id
+        warning_key = 'create_purchase_from_move_%s' % self.id
         if Warning.check(warning_key):
             raise UserWarning(warning_key,gettext(
                 'purchase_from_shipment.create_purchase_from_move',
