@@ -146,8 +146,7 @@ class ShipmentInReturn(CreatePurchaseMixin, metaclass=PoolMeta):
             'readonly': (
                 ((Eval('state') != 'draft') | Bool(Eval('moves', [0])))
                 & Bool(Eval('supplier'))),
-            }, required=True,
-        depends=['state', 'supplier'])
+            }, required=True)
 
     @dualmethod
     def assign_try(cls, shipments):
