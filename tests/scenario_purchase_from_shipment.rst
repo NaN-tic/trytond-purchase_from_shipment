@@ -140,7 +140,7 @@ Receive 5 products::
     >>> Model.get('res.user.warning')(user=config.user,
     ...     name='create_purchase_from_move_%s'%shipment_in.id, always=True).save()
     >>> shipment_in.click('receive')
-    >>> shipment_in.click('done')
+    >>> shipment_in.click('do')
     >>> shipment_in.reload()
     >>> shipment_in.state
     'done'
@@ -188,7 +188,7 @@ Return 2 products::
     ...     name='create_purchase_from_move_%s'%shipment_in_return.id,
     ...     always=True).save()
     >>> shipment_in_return.click('assign_try')
-    >>> shipment_in_return.click('done')
+    >>> shipment_in_return.click('do')
     >>> shipment_in_return.reload()
     >>> shipment_in_return.state
     'done'
@@ -237,7 +237,7 @@ Process returning shipment::
     ...     name='create_purchase_from_move_%s'%returned_shipment.id,
     ...     always=True).save()
     >>> returned_shipment.click('assign_try')
-    >>> returned_shipment.click('done')
+    >>> returned_shipment.click('do')
     >>> returned_shipment.reload()
     >>> returned_shipment.state
     'done'
