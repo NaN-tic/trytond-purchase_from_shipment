@@ -155,8 +155,9 @@ class ShipmentInReturn(CreatePurchaseMixin, metaclass=PoolMeta):
 
         purchases = []
         for shipment in shipments:
-            purchase = shipment.create_purchase()
-            if purchase:
+            purchase = shipment.create_purchase(warehouse=shipment.warehouse)
+            # quote purchases that have a warehouse: purchase.check_for_quotation()
+            if purchase and purchase.warehouse:
                 purchases.append(purchase)
         if purchases:
             Purchase.quote(purchases)
