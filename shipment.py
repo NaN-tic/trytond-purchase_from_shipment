@@ -98,7 +98,7 @@ class CreatePurchaseMixin(object):
         line.product = product
         line.unit = product.purchase_uom
         line.unit_price = product.cost_price
-        line.description = ''
+        line.description = None
 
         set_depends(
             [f for f in PurchaseLine.product.on_change
