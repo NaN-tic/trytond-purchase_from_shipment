@@ -91,6 +91,7 @@ class CreatePurchaseMixin(object):
         pool = Pool()
         Purchase = pool.get('purchase.purchase')
         PurchaseLine = pool.get('purchase.line')
+        Uom = pool.get('product.uom')
 
         line = PurchaseLine()
         line.purchase = purchase
@@ -98,7 +99,7 @@ class CreatePurchaseMixin(object):
         line.product = product
         line.unit = product.purchase_uom
         line.unit_price = product.cost_price
-        line.description = ''
+        line.description = None
 
         set_depends(
             [f for f in PurchaseLine.product.on_change
@@ -115,7 +116,8 @@ class CreatePurchaseMixin(object):
         if moves[0].unit_price:
             line.unit_price = moves[0].unit_price
         line.moves = moves
-        line.quantity = line.unit.round(quantity)
+        line.quantity = Uom.compute_qty(product.purchase_uom,
+                quantity, product.purchase_uom)
         return line
 
 
