@@ -75,7 +75,7 @@ class CreatePurchaseMixin(object):
         Purchase = pool.get('purchase.purchase')
 
         purchase = Purchase()
-        purchase.invoice_method = 'shipment'
+        purchase.invoice_method = 'fulfillment'
         purchase.company = self.company
         purchase.purchase_date = self.effective_date or Date.today()
         purchase.party = self.supplier
