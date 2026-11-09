@@ -36,6 +36,8 @@ class Test(unittest.TestCase):
         # Create company
         _ = create_company()
         company = get_company()
+        company.timezone = 'Europe/Madrid'
+        company.save()
 
         # Create fiscal year
         fiscalyear = set_fiscalyear_invoice_sequences(
@@ -57,6 +59,7 @@ class Test(unittest.TestCase):
         Party = Model.get('party.party')
         supplier = Party(name='Supplier')
         supplier.save()
+        self.assertTrue(supplier.purchase_from_shipment_group_lines)
 
         # Get stock locations
         Location = Model.get('stock.location')
@@ -148,6 +151,8 @@ class Test(unittest.TestCase):
         self.assertEqual(len(purchases), 1)
         self.assertEqual(sorted([l.quantity for l in purchases[0].lines]),
                          [5.0])
+        self.assertEqual(len({m.origin.id
+            for m in shipment_in.incoming_moves}), 1)
         self.assertEqual(len(purchases[0].shipments), 1)
         self.assertEqual(purchases[0].shipments[0], shipment_in)
         self.assertEqual(purchases[0].state, 'processing')
@@ -230,3 +235,72 @@ class Test(unittest.TestCase):
         self.assertEqual(purchase.shipment_returns[0], returned_shipment)
         self.assertEqual(purchase.state, 'processing')
         self.assertEqual(purchase.shipment_state, 'received')
+
+        # Receive and return repeated products with both supplier settings.
+        for grouped in (False, True):
+            supplier.purchase_from_shipment_group_lines = grouped
+            supplier.save()
+            shipment = ShipmentIn(
+                supplier=supplier, company=company, warehouse=warehouse_loc)
+            for quantity, price in ((2, Decimal('7')), (3, Decimal('9'))):
+                move = shipment.incoming_moves.new()
+                move.product = product
+                move.quantity = quantity
+                move.from_location = supplier_loc
+                move.to_location = shipment.warehouse_input
+                move.unit_price = price
+                move.currency = company.currency
+            shipment.save()
+            first_price = shipment.incoming_moves[0].unit_price
+            Model.get('res.user.warning')(user=config.user,
+                name='create_purchase_from_move_%s' % shipment.id,
+                always=True).save()
+            shipment.click('receive')
+            shipment.click('do')
+            shipment.reload()
+            self.assertEqual(shipment.state, 'done')
+            purchase = shipment.incoming_moves[0].origin.purchase
+            expected = ([(5, first_price)] if grouped else
+                [(2, Decimal('7')), (3, Decimal('9'))])
+            self.assertCountEqual(
+                [(line.quantity, line.unit_price) for line in purchase.lines],
+                expected)
+            self.assertEqual(len({move.origin.id
+                for move in shipment.incoming_moves}), 1 if grouped else 2)
+            self.assertCountEqual(
+                [(line.quantity, line.unit_price)
+                    for invoice in purchase.invoices for line in invoice.lines],
+                expected)
+
+            returned = ShipmentInReturn(supplier=supplier, company=company,
+                from_location=storage_loc, to_location=supplier_loc)
+            for quantity, price in ((2, Decimal('7')), (3, Decimal('9'))):
+                move = returned.moves.new()
+                move.product = product
+                move.quantity = quantity
+                move.from_location = storage_loc
+                move.to_location = supplier_loc
+                move.unit_price = price
+                move.currency = company.currency
+            returned.save()
+            first_price = returned.moves[0].unit_price
+            returned.click('wait')
+            Model.get('res.user.warning')(user=config.user,
+                name='create_purchase_from_move_%s' % returned.id,
+                always=True).save()
+            returned.click('assign_try')
+            returned.click('do')
+            returned.reload()
+            self.assertEqual(returned.state, 'done')
+            purchase = returned.moves[0].origin.purchase
+            expected = ([(-5, first_price)] if grouped else
+                [(-2, Decimal('7')), (-3, Decimal('9'))])
+            self.assertCountEqual(
+                [(line.quantity, line.unit_price) for line in purchase.lines],
+                expected)
+            self.assertEqual(len({move.origin.id
+                for move in returned.moves}), 1 if grouped else 2)
+            self.assertCountEqual(
+                [(line.quantity, line.unit_price)
+                    for invoice in purchase.invoices for line in invoice.lines],
+                expected)
