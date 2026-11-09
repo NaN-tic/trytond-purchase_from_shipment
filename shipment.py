@@ -28,20 +28,16 @@ class CreatePurchaseMixin(object):
         Uom = pool.get('product.uom')
         Warning = pool.get('res.user.warning')
 
-        product2moves = {}
-        product2quantity = {}
+        moves = []
         moves_fname = ('incoming_moves' if self.__name__ == 'stock.shipment.in'
             else 'moves')
         for move in getattr(self, moves_fname, []):
             if move.origin:
                 continue
             assert move.product.purchasable
-            product2moves.setdefault(move.product, []).append(move)
-            product2quantity.setdefault(move.product, 0.0)
-            product2quantity[move.product] += Uom.compute_qty(move.unit,
-                move.quantity, move.product.purchase_uom)
+            moves.append(move)
 
-        if not product2quantity:
+        if not moves:
             return
 
         warning_key = 'create_purchase_from_move_%s' % self.id
@@ -50,23 +46,28 @@ class CreatePurchaseMixin(object):
                 'purchase_from_shipment.create_purchase_from_move',
                 shipment=self.rec_name,
                 products_wo_origin=', '.join([p.rec_name
-                        for p in product2moves.keys()]),
+                        for p in dict.fromkeys(m.product for m in moves)]),
                 ))
 
         sign = -1.0 if self.__name__ == 'stock.shipment.in.return' else 1.0
 
         purchase = self.get_purchase(warehouse)
         purchase.save()
-        purchase_lines = []
-        for product, moves in product2moves.items():
+        grouped_moves = {}
+        for move in moves:
+            key = (move.product if self.supplier.purchase_from_shipment_group_lines
+                else move)
+            grouped_moves.setdefault(key, []).append(move)
+        for line_moves in grouped_moves.values():
+            product = line_moves[0].product
+            quantity = sum(Uom.compute_qty(move.unit, move.quantity,
+                    product.purchase_uom) for move in line_moves)
             purchase_line = self.get_purchase_line(purchase, product,
-                product2quantity[product] * sign, moves)
+                quantity * sign, line_moves)
             purchase_line.save()
-            for m in moves:
-                m.origin = purchase_line
-                m.save()
-            if purchase_line:
-                purchase_lines.append(purchase_line)
+            for move in line_moves:
+                move.origin = purchase_line
+                move.save()
         return purchase
 
     def get_purchase(self, warehouse):

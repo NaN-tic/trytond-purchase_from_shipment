@@ -2,6 +2,14 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=utf-8\n"
 
+msgctxt "field:party.party,purchase_from_shipment_group_lines:"
+msgid "Group Purchase Lines by Product"
+msgstr "Agrupar líneas de compra por producto"
+
+msgctxt "help:party.party,purchase_from_shipment_group_lines:"
+msgid "Group moves of the same product into one purchase line when creating purchases from supplier shipments or returns."
+msgstr "Agrupar los movimientos del mismo producto en una línea de compra al crear compras desde albaranes o devoluciones de proveedor."
+
 msgctxt "field:stock.shipment.in.return,supplier:"
 msgid "Supplier"
 msgstr "Proveedor"
